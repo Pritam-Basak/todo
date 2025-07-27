@@ -1,43 +1,40 @@
-name: Build FLTK App for Windows
+name: Windows FLTK Build
 
 on:
   push:
-    paths:
-      - '**.cpp'
-      - '**.h'
-      - '**/CMakeLists.txt'
-      - '.github/workflows/**'
-  workflow_dispatch:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout source code
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Install CMake
-      uses: lukka/get-cmake@v3
+      uses: jwlawson/actions-setup-cmake@v1
+      with:
+        cmake-version: '3.29.2' # or latest stable
 
-    - name: Build and Install FLTK from source
+    - name: Install vcpkg
       run: |
-        git clone https://github.com/fltk/fltk.git
-        cd fltk
-        git checkout release-1.3.5
-        cmake -B build -S . -DOPTION_BUILD_EXAMPLES=OFF
-        cmake --build build --config Release
-        cmake --install build --prefix C:/fltk
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
 
-    - name: Configure your C++ Project
-      run: |
-        cmake -B build -S todo-fltk -DCMAKE_PREFIX_PATH="C:/fltk"
+    - name: Install FLTK with vcpkg
+      run: .\vcpkg\vcpkg.exe install fltk:x64-windows
 
-    - name: Build your C++ Project
+    - name: Configure CMake
+      run: cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build with CMake
       run: cmake --build build --config Release
 
-    - name: Upload EXE Artifact
+    - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
-        name: todo-windows-exe
-        path: build/Release/*.exe
+        name: todo-fltk-exe
+        path: build\Release\*.exe
