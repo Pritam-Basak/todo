@@ -1,0 +1,26 @@
+name: Build for Windows
+
+on: [push, pull_request]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install FLTK
+      run: |
+        choco install fltk --version=1.3.5
+
+    - name: Configure with CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Upload EXE
+      uses: actions/upload-artifact@v3
+      with:
+        name: todo-windows-exe
+        path: build/Release/todo.exe
